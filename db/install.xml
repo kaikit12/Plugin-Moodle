@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/exercise_suggestion/db" VERSION="20241022" COMMENT="XMLDB file for Moodle local/exercise_suggestion"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="local_exsug_logs" COMMENT="Log table for exercise suggestion requests and responses">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User ID who made the request"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Course ID for the request"/>
+        <FIELD NAME="action" TYPE="char" LENGTH="50" NOTNULL="true" SEQUENCE="false" COMMENT="Type of action (get_suggestions, submit_feedback, etc.)"/>
+        <FIELD NAME="suggestions_count" TYPE="int" LENGTH="5" NOTNULL="false" SEQUENCE="false" COMMENT="Number of suggestions returned"/>
+        <FIELD NAME="response_time" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="API response time in milliseconds"/>
+        <FIELD NAME="success" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Whether the request was successful"/>
+        <FIELD NAME="error_message" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Error message if request failed"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp when the log entry was created"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid_fk" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="courseid_fk" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid_courseid_idx" UNIQUE="false" FIELDS="userid, courseid"/>
+        <INDEX NAME="timecreated_idx" UNIQUE="false" FIELDS="timecreated"/>
+        <INDEX NAME="action_idx" UNIQUE="false" FIELDS="action"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="local_exsug_feedback" COMMENT="Store feedback data for exercise suggestions">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="exercise_id" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="External exercise ID from the API"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User ID who provided feedback"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Course ID context"/>
+        <FIELD NAME="rating" TYPE="int" LENGTH="2" NOTNULL="true" SEQUENCE="false" COMMENT="Overall rating (1-5)"/>
+        <FIELD NAME="difficulty_rating" TYPE="int" LENGTH="2" NOTNULL="true" SEQUENCE="false" COMMENT="Difficulty rating (1-5)"/>
+        <FIELD NAME="usefulness_rating" TYPE="int" LENGTH="2" NOTNULL="false" SEQUENCE="false" COMMENT="Usefulness rating (1-5)"/>
+        <FIELD NAME="completion_time" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Time taken to complete exercise in minutes"/>
+        <FIELD NAME="completed" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether the exercise was completed"/>
+        <FIELD NAME="comments" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Additional feedback comments"/>
+        <FIELD NAME="feedback_data" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON encoded additional feedback data"/>
+        <FIELD NAME="api_response" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON encoded API response"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp when feedback was submitted"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp when feedback was last modified"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid_fk" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="courseid_fk" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="exercise_id_idx" UNIQUE="false" FIELDS="exercise_id"/>
+        <INDEX NAME="userid_courseid_idx" UNIQUE="false" FIELDS="userid, courseid"/>
+        <INDEX NAME="timecreated_idx" UNIQUE="false" FIELDS="timecreated"/>
+        <INDEX NAME="rating_idx" UNIQUE="false" FIELDS="rating"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="local_exsug_cache" COMMENT="Cache table for exercise suggestions to improve performance">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="cache_key" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Unique cache key"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User ID for the cached suggestions"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Course ID for the cached suggestions"/>
+        <FIELD NAME="filters_hash" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false" COMMENT="MD5 hash of filters used"/>
+        <FIELD NAME="suggestions_data" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON encoded suggestions data"/>
+        <FIELD NAME="metadata" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON encoded metadata"/>
+        <FIELD NAME="suggestions_count" TYPE="int" LENGTH="5" NOTNULL="true" SEQUENCE="false" COMMENT="Number of suggestions in cache"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp when cache entry was created"/>
+        <FIELD NAME="timeexpires" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp when cache entry expires"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid_fk" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="courseid_fk" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="cache_key_idx" UNIQUE="true" FIELDS="cache_key"/>
+        <INDEX NAME="userid_courseid_idx" UNIQUE="false" FIELDS="userid, courseid"/>
+        <INDEX NAME="timeexpires_idx" UNIQUE="false" FIELDS="timeexpires"/>
+        <INDEX NAME="timecreated_idx" UNIQUE="false" FIELDS="timecreated"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="local_exsug_progress" COMMENT="Store user progress data for synchronization with external API">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User ID"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Course ID"/>
+        <FIELD NAME="activity_id" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Course module ID"/>
+        <FIELD NAME="activity_type" TYPE="char" LENGTH="50" NOTNULL="false" SEQUENCE="false" COMMENT="Type of activity (quiz, assignment, etc.)"/>
+        <FIELD NAME="completion_state" TYPE="int" LENGTH="2" NOTNULL="true" SEQUENCE="false" COMMENT="Completion state"/>
+        <FIELD NAME="grade_percentage" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false" DECIMALS="2" COMMENT="Grade as percentage"/>
+        <FIELD NAME="time_spent" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Time spent on activity in seconds"/>
+        <FIELD NAME="attempts_count" TYPE="int" LENGTH="5" NOTNULL="false" DEFAULT="0" SEQUENCE="false" COMMENT="Number of attempts made"/>
+        <FIELD NAME="progress_data" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON encoded additional progress data"/>
+        <FIELD NAME="synced_to_api" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether this progress has been synced to external API"/>
+        <FIELD NAME="sync_attempts" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Number of sync attempts made"/>
+        <FIELD NAME="last_sync_attempt" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Timestamp of last sync attempt"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp when progress was recorded"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp when progress was last modified"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid_fk" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="courseid_fk" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+        <KEY NAME="activity_id_fk" TYPE="foreign" FIELDS="activity_id" REFTABLE="course_modules" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid_courseid_idx" UNIQUE="false" FIELDS="userid, courseid"/>
+        <INDEX NAME="activity_id_idx" UNIQUE="false" FIELDS="activity_id"/>
+        <INDEX NAME="synced_to_api_idx" UNIQUE="false" FIELDS="synced_to_api"/>
+        <INDEX NAME="timecreated_idx" UNIQUE="false" FIELDS="timecreated"/>
+        <INDEX NAME="last_sync_attempt_idx" UNIQUE="false" FIELDS="last_sync_attempt"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="local_exsug_analytics" COMMENT="Cache table for user analytics data from external API">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User ID"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Course ID (null for global analytics)"/>
+        <FIELD NAME="analytics_type" TYPE="char" LENGTH="50" NOTNULL="true" SEQUENCE="false" COMMENT="Type of analytics (learning_progress, skill_levels, etc.)"/>
+        <FIELD NAME="analytics_data" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON encoded analytics data"/>
+        <FIELD NAME="engagement_score" TYPE="number" LENGTH="5" NOTNULL="false" SEQUENCE="false" DECIMALS="2" COMMENT="User engagement score"/>
+        <FIELD NAME="performance_score" TYPE="number" LENGTH="5" NOTNULL="false" SEQUENCE="false" DECIMALS="2" COMMENT="User performance score"/>
+        <FIELD NAME="confidence_level" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false" COMMENT="User confidence level (low, medium, high)"/>
+        <FIELD NAME="recommended_difficulty" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false" COMMENT="Recommended difficulty level"/>
+        <FIELD NAME="last_api_update" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp of last update from API"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp when record was created"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp when record was last modified"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid_fk" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="courseid_fk" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid_courseid_type_idx" UNIQUE="true" FIELDS="userid, courseid, analytics_type"/>
+        <INDEX NAME="userid_idx" UNIQUE="false" FIELDS="userid"/>
+        <INDEX NAME="courseid_idx" UNIQUE="false" FIELDS="courseid"/>
+        <INDEX NAME="last_api_update_idx" UNIQUE="false" FIELDS="last_api_update"/>
+        <INDEX NAME="analytics_type_idx" UNIQUE="false" FIELDS="analytics_type"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>

@@ -1,0 +1,390 @@
+﻿{{! Exercise View - Defensive CSS Fix }}
+<style>
+/* 1. Reset toàn bộ box model để tránh padding làm phình to */
+.exercise-view-wrapper * {
+    box-sizing: border-box;
+}
+
+.exercise-view-wrapper {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: 50px; /* Thêm khoảng trống dưới cùng */
+}
+
+/* 2. Header Gradient */
+.exercise-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px; /* Giảm padding một chút */
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25);
+    /* Fix lỗi text tràn ra ngoài trên mobile */
+    word-wrap: break-word; 
+}
+
+.exercise-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.exercise-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap; /* Cho phép rớt dòng nếu màn hình bé */
+    font-size: 13px;
+}
+
+.meta-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 5px 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.timer {
+    background: #fff;
+    color: #764ba2;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+/* 3. LAYOUT FIX - CHUYỂN TỪ GRID SANG FLEXBOX */
+.main-layout {
+    display: flex;
+    flex-wrap: wrap; /* QUAN TRỌNG: Thiếu chỗ tự rớt dòng */
+    gap: 20px;
+    width: 100%;
+    align-items: flex-start; /* Để sticky sidebar hoạt động */
+}
+
+/* Cột nội dung chính (Trái) */
+.main-column {
+    flex: 1 1 400px; /* Co giãn, min 400px thay vì 600px */
+    min-width: 0; /* Fix lỗi Flexbox không co nhỏ text/code */
+    max-width: 100%; /* Không bao giờ vượt quá container cha */
+}
+
+/* Cột Sidebar (Phải) */
+.sidebar-column {
+    flex: 0 1 280px; /* Co giãn được, ưu tiên 280px */
+    min-width: 280px; /* Tối thiểu 280px */
+    max-width: 100%; /* Mobile sẽ full width */
+}
+
+/* Responsive: Nếu màn hình nhỏ hơn 768px, sidebar rớt xuống dưới luôn */
+@media (max-width: 768px) {
+    .main-column {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+    .sidebar-column {
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 100%; /* Override min-width */
+    }
+    /* Tắt sticky trên mobile để đỡ vướng */
+    .sidebar-sticky-content {
+        position: static !important; 
+    }
+    .exercise-header h2 {
+        font-size: 20px; /* Nhỏ hơn trên mobile */
+    }
+}
+
+/* Cards */
+.section-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #e5e7eb;
+    overflow: hidden; /* Cắt phần thừa nếu có */
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #374151;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Code Editor Styling */
+.code-wrapper {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #333;
+    background: #1e1e1e;
+}
+
+textarea.code-input {
+    width: 100%;
+    max-width: 100%; /* Đảm bảo không tràn */
+    min-height: 400px; 
+    background: transparent;
+    color: #d4d4d4;
+    border: none;
+    padding: 15px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    display: block; /* Fix whitespace bug */
+    box-sizing: border-box; /* Critical để padding không làm tràn */
+}
+
+/* Sidebar Elements */
+.test-case {
+    padding: 10px;
+    background: #f8fafc;
+    border-left: 3px solid #10b981;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
+    word-break: break-all; /* Test case dài quá sẽ tự xuống dòng */
+}
+
+.hints-box {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+}
+.hints-box ul {
+    padding-left: 20px; 
+    margin: 0;
+}
+.hints-box li {
+    margin-bottom: 5px;
+    color: #92400e;
+    font-size: 13px;
+}
+
+/* Sticky Logic */
+.sidebar-sticky-content {
+    position: sticky;
+    top: 20px; /* Cách mép trên 20px */
+    z-index: 99; /* Đè lên các thành phần thường nhưng dưới Header Moodle */
+}
+
+/* Buttons */
+.btn-submit {
+    width: 100%;
+    background: #667eea;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-submit:hover {
+    background: #5a67d8;
+}
+
+.btn-back {
+    display: inline-block;
+    padding: 12px 20px;
+    background: #f3f4f6;
+    color: #4b5563;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.auto-save-text {
+    font-size: 12px;
+    color: #10b981;
+    margin-top: 5px;
+    text-align: right;
+    height: 15px; /* Giữ chỗ để không bị nhảy layout */
+}
+
+.difficulty-easy { color: #10b981; }
+.difficulty-medium { color: #f59e0b; }
+.difficulty-hard { color: #ef4444; }
+
+/* FIX RIÊNG CHO CÁC CLASS CỦA MOODLE (Nếu có) */
+.no-overflow {
+    overflow-x: auto; /* Nếu nội dung quá rộng thì hiện thanh cuộn TRONG KHUNG chứ không vỡ layout */
+}
+</style>
+
+<div class="exercise-view-wrapper">
+    <div class="exercise-header">
+        <h2>{{exercise.title}}</h2>
+        <div class="exercise-meta">
+            <div class="meta-badge">⏱ {{exercise.estimated_time}} phút</div>
+            <div class="meta-badge difficulty-{{exercise.difficulty}}">● {{exercise.difficulty}}</div>
+            <div class="timer">⏰ <span id="timer">00:00</span></div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        
+        <div class="main-column">
+            <div class="section-card no-overflow">
+                <div class="section-title">📖 Mô tả bài tập</div>
+                <div class="instructions">{{{exercise.description}}}</div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-title">💻 Code Editor</div>
+                <form method="post" action="{{submit_url}}" id="exercise-form">
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="time_spent" id="time_spent" value="0">
+                    
+                    <div class="instructions no-overflow" style="margin-bottom:10px">{{{exercise.instructions}}}</div>
+
+                    <div class="code-wrapper">
+                        <textarea name="answers[solution]" class="code-input" id="solution" 
+                                  placeholder="// Viết code của bạn ở đây..." 
+                                  spellcheck="false">{{exercise.starter_code}}</textarea>
+                    </div>
+                    
+                    <div id="save-indicator" class="auto-save-text"></div>
+
+                    <div style="margin-top:20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <a href="{{back_url}}" class="btn-back">← Quay lại</a>
+                        <button type="submit" class="btn-submit" style="flex:1;">🚀 Nộp bài ngay</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="sidebar-column">
+            <div class="sidebar-sticky-content">
+                {{#exercise.test_cases.0}}
+                <div class="section-card no-overflow">
+                    <div class="section-title">✓ Test Cases</div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        {{#exercise.test_cases}}
+                        <div class="test-case">
+                            <div><strong>In:</strong> <span style="color:#d97706">{{input}}</span></div>
+                            <div><strong>Out:</strong> <span style="color:#2563eb">{{expected}}</span></div>
+                        </div>
+                        {{/exercise.test_cases}}
+                    </div>
+                </div>
+                {{/exercise.test_cases.0}}
+
+                {{#exercise.hints.0}}
+                <div class="section-card hints-box">
+                    <div class="section-title" style="color:#92400e">💡 Gợi ý</div>
+                    <ul>
+                        {{#exercise.hints}}
+                        <li>{{.}}</li>
+                        {{/exercise.hints}}
+                    </ul>
+                </div>
+                {{/exercise.hints.0}}
+
+                {{#exercise.tags.0}}
+                <div class="section-card">
+                    <div class="section-title">🏷 Tags</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px;">
+                        {{#exercise.tags}}
+                        <span style="background:#f3f4f6; padding:4px 8px; border-radius:4px; font-size:12px; color:#4b5563">#{{.}}</span>
+                        {{/exercise.tags}}
+                    </div>
+                </div>
+                {{/exercise.tags.0}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    let exerciseStartTime = Date.now();
+    let exerciseTimerInterval;
+    let exerciseSaveTimeout;
+
+    window.addEventListener('DOMContentLoaded', function() {
+        const exerciseId = '{{exercise.id}}';
+        const solutionInput = document.getElementById('solution');
+        
+        // TEMPORARILY DISABLED - Load saved code
+        // const saved = localStorage.getItem('exercise_' + exerciseId);
+        // if (saved) {
+        //     try {
+        //         const data = JSON.parse(saved);
+        //         if(data.code) solutionInput.value = data.code;
+        //         if(data.timeSpent) exerciseStartTime = Date.now() - (data.timeSpent * 1000);
+        //     } catch(e) {}
+        // }
+        
+        exerciseTimerInterval = setInterval(updateExerciseTimer, 1000);
+        if(solutionInput) {
+            solutionInput.addEventListener('input', autoSaveExercise);
+            
+            // Tab support
+            solutionInput.addEventListener('keydown', function(e) {
+                if (e.key == 'Tab') {
+                    e.preventDefault();
+                    var start = this.selectionStart;
+                    var end = this.selectionEnd;
+                    this.value = this.value.substring(0, start) + "\t" + this.value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 1;
+                }
+            });
+        }
+    });
+
+    function updateExerciseTimer() {
+        const elapsed = Math.floor((Date.now() - exerciseStartTime) / 1000);
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
+        const timerEl = document.getElementById('timer');
+        if(timerEl) timerEl.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+        const timeInput = document.getElementById('time_spent');
+        if(timeInput) timeInput.value = elapsed;
+    }
+
+    function autoSaveExercise() {
+        clearTimeout(exerciseSaveTimeout);
+        const indicator = document.getElementById('save-indicator');
+        if(indicator) indicator.textContent = '';
+        
+        exerciseSaveTimeout = setTimeout(function() {
+            const exerciseId = '{{exercise.id}}';
+            const code = document.getElementById('solution').value;
+            const timeSpent = Math.floor((Date.now() - exerciseStartTime) / 1000);
+            
+            localStorage.setItem('exercise_' + exerciseId, JSON.stringify({
+                code: code,
+                timeSpent: timeSpent,
+                savedAt: new Date().toISOString()
+            }));
+            
+            if(indicator) indicator.textContent = '✓ Đã lưu bài làm';
+        }, 1000);
+    }
+
+    const form = document.getElementById('exercise-form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const exerciseId = '{{exercise.id}}';
+            setTimeout(() => localStorage.removeItem('exercise_' + exerciseId), 1000);
+        });
+    }
+})();
+</script>

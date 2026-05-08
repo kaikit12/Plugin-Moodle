@@ -1,0 +1,48 @@
+<div class="dashboard-suggestions-container">
+    <h3 style="margin-top: 0; color: #333; font-size: 1.2rem; margin-bottom: 15px;">
+        <i class="fa fa-lightbulb-o" style="color: #f39c12;"></i> Bài tập đề xuất cho bạn
+    </h3>
+
+    {{#has_courses}}
+        <div class="accordion" id="accordionSuggestions">
+            {{#courses}}
+            <div class="card" style="margin-bottom: 10px; border: 1px solid #eee; border-radius: 8px;">
+                <div class="card-header" id="heading-{{course_id}}" style="background: #f8f9fa; border-radius: 8px; padding: 0;">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link w-100 text-left" type="button" data-toggle="collapse" data-target="#collapse-{{course_id}}" aria-expanded="false" aria-controls="collapse-{{course_id}}" style="text-decoration: none; color: #333; font-weight: bold; padding: 12px 15px;">
+                            <i class="fa fa-book text-primary mr-2"></i> {{course_name}}
+                            <span class="badge badge-primary float-right">{{suggestions.length}}</span>
+                        </button>
+                    </h5>
+                </div>
+
+                <div id="collapse-{{course_id}}" class="collapse" aria-labelledby="heading-{{course_id}}" data-parent="#accordionSuggestions">
+                    <div class="card-body" style="padding: 15px; background: #fff;">
+                        {{#suggestions}}
+                        <div class="suggestion-item" style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                            <h6 style="font-weight: bold; margin-bottom: 5px;">{{title}}</h6>
+                            <p style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">{{description}}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge badge-info">{{difficulty}}</span>
+                                    <span class="badge badge-secondary"><i class="fa fa-clock-o"></i> {{estimated_time}}m</span>
+                                </div>
+                                <div class="d-flex btn-group">
+                                    <button class="btn btn-sm btn-outline-info btn-exercise-details mr-2" data-id="{{id}}" data-courseid="{{course_id}}" data-title="{{title}}">Chi tiết</button>
+                                    <a href="{{view_url}}" class="btn btn-sm btn-outline-primary">Làm ngay</a>
+                                </div>
+                            </div>
+                        </div>
+                        {{/suggestions}}
+                    </div>
+                </div>
+            </div>
+            {{/courses}}
+        </div>
+    {{/has_courses}}
+    {{^has_courses}}
+        <div class="alert alert-info" style="border-radius: 8px; font-size: 0.95rem;">
+            Hệ thống chưa tìm thấy gợi ý bài tập nào cho các môn bạn đang học. Hãy quay lại sau nhé!
+        </div>
+    {{/has_courses}}
+</div>

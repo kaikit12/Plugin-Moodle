@@ -1,0 +1,202 @@
+{{! Result View - Modern UI }}
+<style>
+.result-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.result-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+.score-card {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+.score-display {
+    font-size: 80px;
+    font-weight: 700;
+    margin: 20px 0;
+}
+.score-success { color: #10b981; }
+.score-warning { color: #f59e0b; }
+.score-danger { color: #ef4444; }
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+.info-item {
+    background: #f9fafb;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+.info-label {
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+.info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+}
+.feedback-card {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+.cloud-card {
+    background: #e0e7ff;
+    border: 1px solid #818cf8;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+.test-results {
+    margin-top: 20px;
+}
+.test-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 13px;
+}
+.test-pass {
+    background: #d1fae5;
+    border-left: 4px solid #10b981;
+}
+.test-fail {
+    background: #fee2e2;
+    border-left: 4px solid #ef4444;
+}
+.test-icon {
+    font-size: 20px;
+    margin-right: 10px;
+}
+.actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+.btn-primary {
+    background: #667eea;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+}
+.btn-secondary {
+    background: #e5e7eb;
+    color: #374151;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+}
+.btn-primary:hover { background: #5a67d8; color: white; }
+.btn-secondary:hover { background: #d1d5db; color: #374151; }
+</style>
+
+<div class="result-wrapper">
+    <div class="result-header">
+        <h2>🎯 Submission Results</h2>
+    </div>
+
+    {{#is_graded}}
+    <div class="score-card">
+        <div class="score-display score-{{percentage_class}}">
+            {{result.percentage}}%
+        </div>
+        <p style="font-size:18px; color:#6b7280;">Score: {{result.score}} / {{result.max_score}}</p>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Exercise ID</div>
+            <div class="info-value">{{result.exercise_id}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Submission ID</div>
+            <div class="info-value">{{result.submission_id}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Time Spent</div>
+            <div class="info-value">{{result.time_spent}} seconds</div>
+        </div>
+    </div>
+
+    {{#result.fusion_score}}
+    <div class="feedback-card" style="background: #ecfdf5; border-color: #34d399;">
+        <h4 style="margin-top:0; color: #047857;">🤖 Điểm số từ DSA Fusion (Local AI)</h4>
+        <p style="margin:0; font-size: 18px; font-weight: bold; color: #065f46;">Score: {{result.fusion_score}} / {{result.max_score}}</p>
+    </div>
+    {{/result.fusion_score}}
+
+    {{#result.cloud_analysis}}
+    <div class="cloud-card">
+        <h4 style="margin-top:0; color: #3730a3;">☁️ Phân tích từ Cloud (PythonFixer)</h4>
+        <p style="margin:0; color: #312e81;">{{result.cloud_analysis}}</p>
+    </div>
+    {{/result.cloud_analysis}}
+
+    {{#result.feedback.overall}}
+    <div class="feedback-card">
+        <h4 style="margin-top:0;">💬 {{#str}}overallfeedback, local_exercise_suggestion{{/str}}</h4>
+        <p style="margin:0;">{{result.feedback.overall}}</p>
+    </div>
+    {{/result.feedback.overall}}
+
+    {{#result.test_results.0}}
+    <div class="test-results">
+        <h4>✓ {{#str}}testresults, local_exercise_suggestion{{/str}}</h4>
+        {{#result.test_results}}
+        <div class="test-item {{#passed}}test-pass{{/passed}}{{^passed}}test-fail{{/passed}}">
+            <span class="test-icon">{{#passed}}✅{{/passed}}{{^passed}}❌{{/passed}}</span>
+            <div>
+                <strong>{{test}}</strong><br>
+                <small>{{message}}</small>
+            </div>
+        </div>
+        {{/result.test_results}}
+    </div>
+    {{/result.test_results.0}}
+    {{/is_graded}}
+
+    {{#is_pending}}
+    <div style="background:#dbeafe; border:1px solid #3b82f6; border-radius:10px; padding:30px; text-align:center;">
+        <div style="font-size:40px; margin-bottom:15px;">⏳</div>
+        <h3>Your submission is being graded...</h3>
+        <p style="color:#6b7280;">Status: {{result.status}}</p>
+    </div>
+    {{/is_pending}}
+
+    <div class="actions">
+        <a href="{{{list_url}}}" class="btn-primary">
+            ← {{#str}}backtosuggestionlist, local_exercise_suggestion{{/str}}
+        </a>
+        <a href="{{{exercise_url}}}" class="btn-secondary">
+            🔄 {{#str}}retryexercise, local_exercise_suggestion{{/str}}
+        </a>
+    </div>
+</div>

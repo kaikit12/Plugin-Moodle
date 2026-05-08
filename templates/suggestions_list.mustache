@@ -1,0 +1,214 @@
+﻿{{!
+    Exercise Suggestions - Modern UI
+}}
+<style>
+.exercise-suggestions-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.suggestions-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+}
+.suggestions-header h2 {
+    margin: 0 0 20px 0;
+    font-size: 28px;
+    font-weight: 600;
+}
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+.stat-card {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+.stat-number {
+    font-size: 36px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 5px;
+}
+.stat-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    opacity: 0.9;
+    letter-spacing: 1px;
+}
+.section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 30px 0 15px 0;
+}
+.exercises-grid {
+    display: grid;
+    gap: 20px;
+}
+.exercise-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    border-left: 4px solid #667eea;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+.exercise-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+.exercise-card.difficulty-easy { border-left-color: #10b981; }
+.exercise-card.difficulty-medium { border-left-color: #f59e0b; }
+.exercise-card.difficulty-hard { border-left-color: #ef4444; }
+.exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+.exercise-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+    flex: 1;
+}
+.badge-new {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.exercise-meta-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin: 10px 0;
+    font-size: 14px;
+    color: #666;
+}
+.difficulty-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.difficulty-easy { background: #d1fae5; color: #065f46; }
+.difficulty-medium { background: #fed7aa; color: #92400e; }
+.difficulty-hard { background: #fee2e2; color: #991b1b; }
+.exercise-description {
+    color: #4b5563;
+    margin: 12px 0;
+    line-height: 1.6;
+}
+.exercise-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+}
+.tag {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+.exercise-reason {
+    background: #f0f9ff;
+    border-left: 3px solid #3b82f6;
+    padding: 10px 15px;
+    margin: 12px 0;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #1e40af;
+}
+.view-exercise-btn {
+    display: inline-block;
+    background: #667eea;
+    color: white !important;
+    padding: 10px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin-top: 12px;
+}
+.view-exercise-btn:hover {
+    background: #5568d3;
+    transform: translateX(5px);
+}
+</style>
+
+<div class="exercise-suggestions-wrapper">
+    <div class="suggestions-header">
+        <h2> Bài tập đề xuất</h2>
+        <div class="stats-row">
+            <div class="stat-card">
+                <span class="stat-number">{{metadata.total_count}}</span>
+                <span class="stat-label">Bài mới</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">0%</span>
+                <span class="stat-label">Hoàn thành</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title"> Đề xuất cho bạn</div>
+
+    <div class="exercises-grid">
+        {{#suggestions}}
+        <div class="exercise-card difficulty-{{difficulty}}">
+            <div class="exercise-header">
+                <h3 class="exercise-title">{{title}}</h3>
+                <span class="badge-new">MỚI</span>
+            </div>
+            
+            <div class="exercise-meta-row">
+                <span class="difficulty-badge difficulty-{{difficulty}}">{{difficulty}}</span>
+                <span> ~{{estimated_time}} phút</span>
+            </div>
+
+            <p class="exercise-description">{{description}}</p>
+
+            <div class="exercise-tags">
+                {{#tags}}
+                <span class="tag">{{.}}</span>
+                {{/tags}}
+            </div>
+
+            {{#reason}}
+            <div class="exercise-reason">
+                 {{reason}}
+            </div>
+            {{/reason}}
+
+            <a href="{{view_url}}" class="view-exercise-btn">
+                Xem chi tiết 
+            </a>
+        </div>
+        {{/suggestions}}
+    </div>
+
+    {{^suggestions}}
+    <p style="text-align:center;padding:40px;color:#999;">Không có bài tập đề xuất.</p>
+    {{/suggestions}}
+</div>

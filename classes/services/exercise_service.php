@@ -18,7 +18,7 @@ require_once($CFG->dirroot . '/local/exercise_suggestion/classes/api/client.php'
 require_once($CFG->dirroot . '/local/exercise_suggestion/classes/api/response_handler.php');
 
 /**
- * Exercise Service - Business logic layer vá»›i caching theo report section 6.2
+ * Exercise Service - Business logic layer with caching theo report section 6.2
  *
  * @package    local_exercise_suggestion
  * @copyright  2024 Your Organization
@@ -53,7 +53,7 @@ class exercise_service {
     }
 
     /**
-     * Get exercise suggestions vá»›i cache (UC1 - section 4.1)
+     * Get exercise suggestions with cache (UC1 - section 4.1)
      * Cache key format: sug_{userid}_{courseid} (TTL: 3600s)
      *
      * @param int $userid User ID
@@ -71,7 +71,7 @@ class exercise_service {
         }
 
         // Check cache first (section 6.2.1.B)
-        $cachekey = "sug_{$userid}_{$courseid}";
+        $cachekey = "sug_v2_{$userid}_{$courseid}";
         $cached = $this->cache->get($cachekey);
         
         if ($cached !== false) {
@@ -109,7 +109,7 @@ class exercise_service {
     }
 
     /**
-     * Get exercise details vá»›i cache (UC2 - section 4.2)
+     * Get exercise details with cache (UC2 - section 4.2)
      * Cache key format: ex_{exercise_id} (TTL: 3600s)
      *
      * @param string $exerciseid Exercise ID
@@ -125,7 +125,7 @@ class exercise_service {
 
         // Check cache
         $safe_exercise_id = str_replace('-', '_', $exerciseid);
-        $cachekey = "ex_{$safe_exercise_id}";
+        $cachekey = "ex_v2_{$safe_exercise_id}";
         $cached = $this->cache->get($cachekey);
         
         if ($cached !== false) {
@@ -195,24 +195,62 @@ class exercise_service {
             // Assuming fusion returns score out of 10, multiply by 10
             $percentage = $score_val <= 10 ? $score_val * 10 : $score_val;
             
+            $first_eval = $response['file_evaluations'][0] ?? [];
+            $ai_advice = $first_eval['ai_advice'] ?? '';
+            $improvement = $first_eval['improvement'] ?? '';
+            $criteria_scores = [];
+            if (!empty($first_eval['criteria_scores']) && is_array($first_eval['criteria_scores'])) {
+                foreach ($first_eval['criteria_scores'] as $criterion) {
+                    $criteria_scores[] = [
+                        'name' => clean_param($criterion['name'] ?? 'Criterion', PARAM_TEXT),
+                        'earned' => isset($criterion['earned']) ? (float)$criterion['earned'] : 0,
+                        'max' => isset($criterion['max']) ? (float)$criterion['max'] : 0,
+                        'feedback' => clean_text($criterion['feedback'] ?? ''),
+                        'evidence' => clean_text($criterion['evidence'] ?? '')
+                    ];
+                }
+            }
+
+            $is_placeholder_feedback = function($text) {
+                if (empty($text)) {
+                    return true;
+                }
+                return strpos($text, '[WARNING]') !== false
+                    || strpos($text, 'Error') !== false
+                    || strpos($text, 'Exception') !== false;
+            };
+
             $test_results = [];
-            if (!empty($response['file_evaluations'][0]['feedbacks'])) {
-                foreach ($response['file_evaluations'][0]['feedbacks'] as $fb) {
+            if (!empty($first_eval['feedbacks'])) {
+                foreach ($first_eval['feedbacks'] as $fb) {
                     $msg = isset($fb['message']) ? $fb['message'] : '';
-                    if (strpos($msg, '[WARNING]') !== false || strpos($msg, 'Error') !== false || strpos($msg, 'Exception') !== false) {
-                        $msg = 'Hệ thống đã chấm điểm bằng thuật toán (không có nhận xét chi tiết cho test case này).';
+                    if ($is_placeholder_feedback($msg)) {
+                        if (!$is_placeholder_feedback($ai_advice)) {
+                            $msg = $ai_advice;
+                        } else {
+                            $points = isset($fb['points']) ? (float)$fb['points'] : $percentage;
+                            $msg = "Graded by source-code analysis: {$points}/100. Review the main algorithm, required cases, and edge cases.";
+                        }
                     }
                     $test_results[] = [
                         'test' => isset($fb['testcase']) ? $fb['testcase'] : 'Test',
-                        'passed' => isset($fb['status']) && $fb['status'] === 'AC',
+                        'passed' => $percentage >= 50 && isset($fb['status']) && $fb['status'] === 'AC',
                         'message' => $msg
                     ];
                 }
             }
 
             $cloud_analysis_raw = isset($response['overall_ai_summary']) ? $response['overall_ai_summary'] : '';
-            if (empty($cloud_analysis_raw) || strpos($cloud_analysis_raw, '[WARNING]') !== false || strpos($cloud_analysis_raw, 'Error') !== false) {
-                $cloud_analysis = 'Hiện tại không có nhận xét nào về bài của bạn.';
+            if ($is_placeholder_feedback($cloud_analysis_raw) && !$is_placeholder_feedback($ai_advice)) {
+                $cloud_analysis = $ai_advice;
+            } elseif ($is_placeholder_feedback($cloud_analysis_raw)) {
+                if ($percentage >= 80) {
+                    $cloud_analysis = 'Good result. You can still improve code organization and add more edge-case tests.';
+                } elseif ($percentage >= 50) {
+                    $cloud_analysis = 'Basic result. Review the algorithm, data structure choices, and test coverage.';
+                } else {
+                    $cloud_analysis = 'The submission does not meet the main requirements yet. Re-read the prompt, choose the right algorithm or data structure, then test simple cases first.';
+                }
             } else {
                 $cloud_analysis = $cloud_analysis_raw;
             }
@@ -226,7 +264,9 @@ class exercise_service {
                 'percentage' => $percentage,
                 'fusion_score' => $percentage,
                 'cloud_analysis' => $cloud_analysis,
-                'feedback' => 'Hệ thống Local AI (DSA Fusion) đã chấm trực tiếp bài của bạn.',
+                'feedback' => 'DSA Fusion graded the submission using source-code analysis and exercise criteria.',
+                'improvement' => $improvement,
+                'criteria_scores' => $criteria_scores,
                 'test_results' => $test_results,
                 'time_spent' => $timespent,
                 'completed_at' => date('c')
@@ -242,7 +282,7 @@ class exercise_service {
             $this->log_api_call($userid, $courseid, 'submit', '/api/submit', 200, $responsetime);
 
             // Invalidate relevant caches after submission
-            $suggestionkey = "sug_{$userid}_{$courseid}";
+            $suggestionkey = "sug_v2_{$userid}_{$courseid}";
             $this->cache->delete($suggestionkey);
 
             return $processeddata;
@@ -258,7 +298,7 @@ class exercise_service {
     }
 
     /**
-     * Get submission result vá»›i cache (UC4 - section 4.4)
+     * Get submission result with cache (UC4 - section 4.4)
      * Cache key format: res_{submission_id} (TTL: 300s)
      *
      * @param string $submissionid Submission ID
@@ -358,4 +398,3 @@ class exercise_service {
         }
     }
 }
-

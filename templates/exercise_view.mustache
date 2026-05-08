@@ -1,4 +1,4 @@
-﻿{{! Exercise View - Defensive CSS Fix }}
+{{! Exercise View - Defensive CSS Fix }}
 <style>
 /* 1. Reset toàn bộ box model để tránh padding làm phình to */
 .exercise-view-wrapper * {
@@ -22,7 +22,7 @@
     margin-bottom: 20px;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25);
     /* Fix lỗi text tràn ra ngoài trên mobile */
-    word-wrap: break-word; 
+    word-wrap: break-word;
 }
 
 .exercise-header h2 {
@@ -94,7 +94,7 @@
     }
     /* Tắt sticky trên mobile để đỡ vướng */
     .sidebar-sticky-content {
-        position: static !important; 
+        position: static !important;
     }
     .exercise-header h2 {
         font-size: 20px; /* Nhỏ hơn trên mobile */
@@ -135,7 +135,7 @@
 textarea.code-input {
     width: 100%;
     max-width: 100%; /* Đảm bảo không tràn */
-    min-height: 400px; 
+    min-height: 400px;
     background: transparent;
     color: #d4d4d4;
     border: none;
@@ -167,7 +167,7 @@ textarea.code-input {
     border: 1px solid #fcd34d;
 }
 .hints-box ul {
-    padding-left: 20px; 
+    padding-left: 20px;
     margin: 0;
 }
 .hints-box li {
@@ -226,6 +226,62 @@ textarea.code-input {
 .no-overflow {
     overflow-x: auto; /* Nếu nội dung quá rộng thì hiện thanh cuộn TRONG KHUNG chứ không vỡ layout */
 }
+.grading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(17, 24, 39, 0.55);
+}
+
+.grading-overlay.is-visible {
+    display: flex;
+}
+
+.grading-dialog {
+    width: min(420px, 100%);
+    background: #fff;
+    border-radius: 10px;
+    padding: 26px;
+    text-align: center;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.24);
+    border: 1px solid #e5e7eb;
+}
+
+.grading-spinner {
+    width: 42px;
+    height: 42px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    border: 4px solid #e5e7eb;
+    border-top-color: #667eea;
+    animation: grading-spin 0.9s linear infinite;
+}
+
+.grading-title {
+    margin: 0 0 8px;
+    color: #111827;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.grading-text {
+    margin: 0;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.btn-submit.is-submitting {
+    opacity: 0.75;
+    cursor: wait;
+}
+
+@keyframes grading-spin {
+    to { transform: rotate(360deg); }
+}
 </style>
 
 <div class="exercise-view-wrapper">
@@ -239,7 +295,7 @@ textarea.code-input {
     </div>
 
     <div class="main-layout">
-        
+
         <div class="main-column">
             <div class="section-card no-overflow">
                 <div class="section-title">📖 Mô tả bài tập</div>
@@ -247,24 +303,24 @@ textarea.code-input {
             </div>
 
             <div class="section-card">
-                <div class="section-title">💻 Code Editor</div>
+                <div class="section-title">Code Editor</div>
                 <form method="post" action="{{submit_url}}" id="exercise-form">
                     <input type="hidden" name="sesskey" value="{{sesskey}}">
                     <input type="hidden" name="time_spent" id="time_spent" value="0">
-                    
+
                     <div class="instructions no-overflow" style="margin-bottom:10px">{{{exercise.instructions}}}</div>
 
                     <div class="code-wrapper">
-                        <textarea name="answers[solution]" class="code-input" id="solution" 
-                                  placeholder="// Viết code của bạn ở đây..." 
+                        <textarea name="answers[solution]" class="code-input" id="solution"
+                                  placeholder="// Write your code here..."
                                   spellcheck="false">{{exercise.starter_code}}</textarea>
                     </div>
-                    
+
                     <div id="save-indicator" class="auto-save-text"></div>
 
                     <div style="margin-top:20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <a href="{{back_url}}" class="btn-back">← Quay lại</a>
-                        <button type="submit" class="btn-submit" style="flex:1;">🚀 Nộp bài ngay</button>
+                        <a href="{{back_url}}" class="btn-back">Back</a>
+                        <button type="submit" class="btn-submit" style="flex:1;">Submit now</button>
                     </div>
                 </form>
             </div>
@@ -274,12 +330,17 @@ textarea.code-input {
             <div class="sidebar-sticky-content">
                 {{#exercise.test_cases.0}}
                 <div class="section-card no-overflow">
-                    <div class="section-title">✓ Test Cases</div>
+                    <div class="section-title">Test Cases</div>
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         {{#exercise.test_cases}}
                         <div class="test-case">
+                            {{#message}}
+                            <div>{{message}}</div>
+                            {{/message}}
+                            {{^message}}
                             <div><strong>In:</strong> <span style="color:#d97706">{{input}}</span></div>
                             <div><strong>Out:</strong> <span style="color:#2563eb">{{expected}}</span></div>
+                            {{/message}}
                         </div>
                         {{/exercise.test_cases}}
                     </div>
@@ -288,7 +349,7 @@ textarea.code-input {
 
                 {{#exercise.hints.0}}
                 <div class="section-card hints-box">
-                    <div class="section-title" style="color:#92400e">💡 Gợi ý</div>
+                    <div class="section-title" style="color:#92400e">Hints</div>
                     <ul>
                         {{#exercise.hints}}
                         <li>{{.}}</li>
@@ -312,6 +373,14 @@ textarea.code-input {
     </div>
 </div>
 
+<div class="grading-overlay" id="grading-overlay" role="alert" aria-live="assertive" aria-modal="true">
+    <div class="grading-dialog">
+        <div class="grading-spinner" aria-hidden="true"></div>
+        <h3 class="grading-title">Da nop bai</h3>
+        <p class="grading-text">He thong dang cham diem. Khi co ket qua, trang se tu chuyen sang diem va feedback.</p>
+    </div>
+</div>
+
 <script>
 (function() {
     let exerciseStartTime = Date.now();
@@ -321,7 +390,7 @@ textarea.code-input {
     window.addEventListener('DOMContentLoaded', function() {
         const exerciseId = '{{exercise.id}}';
         const solutionInput = document.getElementById('solution');
-        
+
         // TEMPORARILY DISABLED - Load saved code
         // const saved = localStorage.getItem('exercise_' + exerciseId);
         // if (saved) {
@@ -331,11 +400,11 @@ textarea.code-input {
         //         if(data.timeSpent) exerciseStartTime = Date.now() - (data.timeSpent * 1000);
         //     } catch(e) {}
         // }
-        
+
         exerciseTimerInterval = setInterval(updateExerciseTimer, 1000);
         if(solutionInput) {
             solutionInput.addEventListener('input', autoSaveExercise);
-            
+
             // Tab support
             solutionInput.addEventListener('keydown', function(e) {
                 if (e.key == 'Tab') {
@@ -363,19 +432,19 @@ textarea.code-input {
         clearTimeout(exerciseSaveTimeout);
         const indicator = document.getElementById('save-indicator');
         if(indicator) indicator.textContent = '';
-        
+
         exerciseSaveTimeout = setTimeout(function() {
             const exerciseId = '{{exercise.id}}';
             const code = document.getElementById('solution').value;
             const timeSpent = Math.floor((Date.now() - exerciseStartTime) / 1000);
-            
+
             localStorage.setItem('exercise_' + exerciseId, JSON.stringify({
                 code: code,
                 timeSpent: timeSpent,
                 savedAt: new Date().toISOString()
             }));
-            
-            if(indicator) indicator.textContent = '✓ Đã lưu bài làm';
+
+            if(indicator) indicator.textContent = 'Saved';
         }, 1000);
     }
 
@@ -383,6 +452,18 @@ textarea.code-input {
     if (form) {
         form.addEventListener('submit', function() {
             const exerciseId = '{{exercise.id}}';
+            const submitButton = form.querySelector('.btn-submit');
+            const overlay = document.getElementById('grading-overlay');
+
+            if (submitButton) {
+                submitButton.classList.add('is-submitting');
+                submitButton.disabled = true;
+                submitButton.textContent = 'Dang cham diem...';
+            }
+            if (overlay) {
+                overlay.classList.add('is-visible');
+            }
+
             setTimeout(() => localStorage.removeItem('exercise_' + exerciseId), 1000);
         });
     }

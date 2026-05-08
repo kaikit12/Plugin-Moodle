@@ -44,13 +44,25 @@ class response_handler {
                 }
             }
 
+            $reason = isset($suggestion['reason']) ? clean_text($suggestion['reason']) : '';
+            if (self::looks_broken_text($reason)) {
+                $reason = 'Recommended by Personalized System';
+            }
+
+            $difficulty = clean_param($suggestion['difficulty'], PARAM_TEXT);
+            if (self::looks_broken_text($difficulty)) {
+                $difficulty = 'unknown';
+            }
+
             // Clean and sanitize data
             $suggestions[] = [
                 'id' => clean_param($suggestion['id'], PARAM_ALPHANUMEXT),
                 'title' => clean_param($suggestion['title'], PARAM_TEXT),
-                'difficulty' => clean_param($suggestion['difficulty'], PARAM_TEXT),
+                'difficulty' => $difficulty,
                 'description' => clean_text($suggestion['description']),
                 'estimated_time' => (int)$suggestion['estimated_time'],
+                'tags' => isset($suggestion['tags']) ? self::clean_array($suggestion['tags']) : [],
+                'reason' => $reason,
                 'topics' => isset($suggestion['topics']) ? self::clean_array($suggestion['topics']) : [],
                 'prerequisite_ids' => isset($suggestion['prerequisite_ids']) ? self::clean_array($suggestion['prerequisite_ids']) : []
             ];
@@ -125,7 +137,7 @@ class response_handler {
         return [
             'submission_id' => clean_param($response['submission_id'], PARAM_ALPHANUMEXT),
             'status' => clean_param($response['status'], PARAM_TEXT),
-            'message' => clean_text($response['overall_ai_summary'] ?? 'Đã nộp thuật toán thành công'),
+            'message' => clean_text($response['overall_ai_summary'] ?? 'Submission received successfully'),
             'estimated_grading_time' => isset($response['estimated_grading_time']) ? (int)$response['estimated_grading_time'] : 0,
             'submitted_at' => isset($response['submitted_at']) ? $response['submitted_at'] : date('c')
         ];
@@ -162,6 +174,8 @@ class response_handler {
             'percentage' => isset($response['percentage']) ? (int)$response['percentage'] : 0,
             'fusion_score' => isset($response['fusion_score']) ? (float)$response['fusion_score'] : 0.0,
             'cloud_analysis' => isset($response['cloud_analysis']) ? clean_text($response['cloud_analysis']) : '',
+            'improvement' => isset($response['improvement']) ? clean_text($response['improvement']) : '',
+            'criteria_scores' => isset($response['criteria_scores']) && is_array($response['criteria_scores']) ? $response['criteria_scores'] : [],
             'feedback' => [],
             'correct_answers' => [],
             'time_spent' => isset($response['time_spent']) ? (int)$response['time_spent'] : 0,
@@ -208,16 +222,16 @@ class response_handler {
      */
     public static function handle_api_error($httpcode, $rawmessage = '') {
         $errorcodes = [
-            400 => ['code' => 'bad_request', 'message' => 'Dá»¯ liá»‡u gá»­i lĂªn khĂ´ng há»£p lá»‡'],
-            401 => ['code' => 'unauthorized', 'message' => 'API key khĂ´ng há»£p lá»‡ hoáº·c Ä‘Ă£ háº¿t háº¡n'],
-            404 => ['code' => 'not_found', 'message' => 'KhĂ´ng tĂ¬m tháº¥y tĂ i nguyĂªn yĂªu cáº§u'],
-            429 => ['code' => 'rate_limit', 'message' => 'VÆ°á»£t quĂ¡ giá»›i háº¡n sá»‘ lÆ°á»£ng request. Vui lĂ²ng thá»­ láº¡i sau'],
-            500 => ['code' => 'server_error', 'message' => 'Lá»—i mĂ¡y chá»§ API. Vui lĂ²ng thá»­ láº¡i sau'],
-            503 => ['code' => 'unavailable', 'message' => 'Dá»‹ch vá»¥ API táº¡m thá»i khĂ´ng kháº£ dá»¥ng']
+            400 => ['code' => 'bad_request', 'message' => 'Invalid request data.'],
+            401 => ['code' => 'unauthorized', 'message' => 'Invalid or expired API key.'],
+            404 => ['code' => 'not_found', 'message' => 'Requested resource was not found.'],
+            429 => ['code' => 'rate_limit', 'message' => 'Too many requests. Please try again later.'],
+            500 => ['code' => 'server_error', 'message' => 'API server error. Please try again later.'],
+            503 => ['code' => 'unavailable', 'message' => 'API service is temporarily unavailable.']
         ];
 
         $error = isset($errorcodes[$httpcode]) ? $errorcodes[$httpcode] : 
-            ['code' => 'unknown_error', 'message' => 'Lá»—i khĂ´ng xĂ¡c Ä‘á»‹nh'];
+            ['code' => 'unknown_error', 'message' => 'Unknown error.'];
 
         $error['http_code'] = $httpcode;
         $error['raw_message'] = $rawmessage;
@@ -248,6 +262,18 @@ class response_handler {
         }
 
         return $cleaned;
+    }
+
+    private static function looks_broken_text($text) {
+        if ($text === '') {
+            return false;
+        }
+
+        return strpos($text, 'Ä') !== false
+            || strpos($text, 'Â') !== false
+            || strpos($text, 'Ã') !== false
+            || strpos($text, 'â') !== false
+            || strpos($text, 'ð') !== false;
     }
 }
 

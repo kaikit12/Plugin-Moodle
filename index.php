@@ -15,12 +15,38 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once('C:/xampp/htdocs/moodle/config.php');
+$moodleconfig = __DIR__ . '/../../config.php';
+if (!file_exists($moodleconfig)) {
+    $moodleconfig = 'C:/xampp/htdocs/moodle/config.php';
+}
+require_once($moodleconfig);
 require_once($CFG->dirroot . '/local/exercise_suggestion/classes/services/exercise_service.php');
 require_once($CFG->dirroot . '/local/exercise_suggestion/classes/models/progress_tracker.php');
 
 use local_exercise_suggestion\services\exercise_service;
 use local_exercise_suggestion\models\progress_tracker;
+
+function exsug_completion_pref_key($courseid) {
+    return 'local_exercise_suggestion_completed_' . (int)$courseid;
+}
+
+function exsug_get_completed_exercises($userid, $courseid) {
+    $raw = get_user_preferences(exsug_completion_pref_key($courseid), '[]', $userid);
+    $items = json_decode($raw, true);
+
+    return is_array($items) ? array_values(array_unique(array_filter($items))) : [];
+}
+
+function exsug_mark_completed($userid, $courseid, $exerciseid) {
+    if (empty($exerciseid)) {
+        return;
+    }
+
+    $completed = exsug_get_completed_exercises($userid, $courseid);
+    $completed[] = $exerciseid;
+    $completed = array_values(array_unique($completed));
+    set_user_preference(exsug_completion_pref_key($courseid), json_encode($completed), $userid);
+}
 
 // Get parameters
 $courseid = optional_param('courseid', 0, PARAM_INT);
@@ -112,21 +138,40 @@ function handle_list_action($service, $courseid, $context) {
 
         // Get suggestions from API with cache
         $data = $service->get_suggestions($USER->username, $courseid, $filters);
+        $completed = exsug_get_completed_exercises($USER->id, $courseid);
+        $completedmap = array_flip($completed);
+        $suggestions = array_map(function($suggestion) use ($courseid, $completedmap) {
+            $suggestion['view_url'] = (new moodle_url('/local/exercise_suggestion/index.php', [
+                'courseid' => $courseid,
+                'action' => 'view',
+                'exerciseid' => $suggestion['id']
+            ]))->out(false);
+            $suggestion['is_completed'] = isset($completedmap[$suggestion['id']]);
+            return $suggestion;
+        }, $data['suggestions']);
+
+        $total = count($suggestions);
+        $completedcount = 0;
+        foreach ($suggestions as $suggestion) {
+            if (!empty($suggestion['is_completed'])) {
+                $completedcount++;
+            }
+        }
+        $completionpercent = $total > 0 ? (int)round(($completedcount / $total) * 100) : 0;
+        $metadata = $data['metadata'] ?? [];
+        $metadata['total_count'] = $total;
+        $metadata['completed_count'] = $completedcount;
+        $metadata['completion_percent'] = $completionpercent;
 
         // Render suggestions list
         $templatecontext = [
             'course_id' => $courseid,
             'course_name' => $data['course_name'] ?? '',
             'user_name' => $data['user_name'] ?? '',
-            'suggestions' => array_map(function($suggestion) use ($courseid) {
-                $suggestion['view_url'] = (new moodle_url('/local/exercise_suggestion/index.php', [
-                    'courseid' => $courseid,
-                    'action' => 'view',
-                    'exerciseid' => $suggestion['id']
-                ]))->out(false);
-                return $suggestion;
-            }, $data['suggestions']),
-            'metadata' => $data['metadata'] ?? []
+            'suggestions' => $suggestions,
+            'metadata' => $metadata,
+            'sesskey' => sesskey(),
+            'ajax_url' => (new moodle_url('/local/exercise_suggestion/ajax.php'))->out(false)
         ];
 
         echo $OUTPUT->render_from_template('local_exercise_suggestion/suggestions_list', $templatecontext);
@@ -218,6 +263,7 @@ function handle_submit_action($service, $exerciseid, $courseid, $context) {
 
         // Submit to API
         $result = $service->submit_exercise($USER->username, $exerciseid, $courseid, $answers, $timespent, $attemptnumber);
+        exsug_mark_completed($USER->id, $courseid, $exerciseid);
 
         // Mark as submitted in progress tracker (DISABLED - table schema doesn't support external exercises)
         // progress_tracker::mark_submitted($USER->id, $courseid, $exerciseid, $result['submission_id'], $timespent);

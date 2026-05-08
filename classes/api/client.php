@@ -43,9 +43,9 @@ class client {
      * @param int|null $retrycount Number of retry attempts (uses config if null)
      */
     public function __construct($apiurl = null, $apikey = null, $timeout = null, $retrycount = null) {
-        $this->apiurl = 'http://localhost:8080';
+        $this->apiurl = $apiurl ?: (get_config('local_exercise_suggestion', 'api_url') ?: 'http://localhost:8080');
         $this->apikey = $apikey ?: get_config('local_exercise_suggestion', 'api_key');
-        $this->timeout = $timeout ?: ((int)get_config('local_exercise_suggestion', 'timeout') ?: 10);
+        $this->timeout = $timeout ?: ((int)get_config('local_exercise_suggestion', 'api_timeout') ?: 10);
         $this->retrycount = $retrycount !== null ? $retrycount : ((int)get_config('local_exercise_suggestion', 'retry_count') ?: 1);
         
         $this->defaultheaders = [
@@ -325,7 +325,7 @@ class client {
      * Endpoint: POST http://127.0.0.1:8000/submissions/
      */
     public function submit_code_to_dsa_fusion($userid, $exerciseid, $code_content) {
-        $url = get_config('local_exercise_suggestion', 'fusion_url') ?: "http://127.0.0.1:8000/submissions/";
+        $url = get_config('local_exercise_suggestion', 'fusion_url') ?: "https://backend-ovru.onrender.com/submissions/";
         
         $temp_dir = make_temp_directory("exsug_submissions");
         $file_name = "submission_{$userid}_{$exerciseid}.py";
@@ -340,6 +340,7 @@ class client {
         $post_data = [
             "student_id" => (string)$userid,
             "student_name" => "SV_" . $userid,
+            "assignment_code" => (string)$exerciseid,
             "idempotency_key" => $idempotency_key,
             "files" => $cfile
         ];
@@ -350,7 +351,7 @@ class client {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $post_data,
-            CURLOPT_TIMEOUT => 60 
+            CURLOPT_TIMEOUT => 120
         ]);
         
         $response = curl_exec($curl);

@@ -2,7 +2,11 @@
 
 define('AJAX_SCRIPT', true);
 
-require_once('C:/xampp/htdocs/moodle/config.php');
+$moodleconfig = __DIR__ . '/../../config.php';
+if (!file_exists($moodleconfig)) {
+    $moodleconfig = 'C:/xampp/htdocs/moodle/config.php';
+}
+require_once($moodleconfig);
 require_once($CFG->dirroot . '/local/exercise_suggestion/classes/services/exercise_service.php');
 
 use local_exercise_suggestion\services\exercise_service;

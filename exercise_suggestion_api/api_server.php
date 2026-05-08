@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * API Server for Exercise Suggestion Plugin
  * Handles API endpoints according to section 6.2.3
@@ -22,7 +22,7 @@ $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 // Route requests
 if ($method === 'POST' && $path === '/api/suggestions') {
     handle_get_suggestions();
-} elseif ($method === 'GET' && preg_match('#^/api/exercise/(\w+)$#', $path, $matches)) {
+} elseif ($method === 'GET' && preg_match('#^/api/exercise/([A-Za-z0-9_-]+)$#', $path, $matches)) {
     handle_get_exercise($matches[1]);
 } elseif ($method === 'POST' && $path === '/api/submit') {
     handle_submit_exercise();
@@ -178,8 +178,8 @@ function handle_get_suggestions() {
             };
 
             // Map mĂ¡Â»Â©c Ă„â€˜Ă¡Â»â„¢ khÄ‚Â³
-            $do_kho_map = [1 => 'Dá»…', 2 => 'Trung bĂ¬nh', 3 => 'KhĂ³'];
-            $do_kho_text = isset($do_kho_map[$row['MaDoKho']]) ? $do_kho_map[$row['MaDoKho']] : 'ChÆ°a phĂ¢n loáº¡i';
+            $do_kho_map = [1 => 'easy', 2 => 'medium', 3 => 'hard'];
+            $do_kho_text = isset($do_kho_map[$row['MaDoKho']]) ? $do_kho_map[$row['MaDoKho']] : 'unknown';
 
             $suggestions[] = [
                 'id' => $row['MaBaiTap'],
@@ -188,7 +188,7 @@ function handle_get_suggestions() {
                 'difficulty' => $do_kho_text,
                 'estimated_time' => 30, // GiÄ‚Â¡ trĂ¡Â»â€¹ mĂ¡ÂºÂ·c Ă„â€˜Ă¡Â»â€¹nh vÄ‚Â¬ bĂ¡ÂºÂ£ng khÄ‚Â´ng cÄ‚Â³
                 'tags' => [$row['MaMon']], // DÄ‚Â¹ng MÄ‚Â£ MÄ‚Â´n lÄ‚Â m tag
-                'reason' => 'Ă„ÂĂ¡Â»Â xuĂ¡ÂºÂ¥t tĂ¡Â»Â« hĂ¡Â»â€¡ thĂ¡Â»â€˜ng Personalized System'
+                'reason' => 'Recommended by Personalized System'
             ];
         }
 
@@ -247,21 +247,42 @@ function handle_get_exercise($id) {
             return iconv('UCS-2LE', 'UTF-8', $bin);
         };
 
-        $do_kho_map = [1 => 'Dá»…', 2 => 'Trung bĂ¬nh', 3 => 'KhĂ³'];
-        $do_kho_text = isset($do_kho_map[$row['MaDoKho']]) ? $do_kho_map[$row['MaDoKho']] : 'ChÆ°a phĂ¢n loáº¡i';
+        $do_kho_map = [1 => 'easy', 2 => 'medium', 3 => 'hard'];
+            $do_kho_text = isset($do_kho_map[$row['MaDoKho']]) ? $do_kho_map[$row['MaDoKho']] : 'unknown';
 
-        // XĂ¡Â»Â­ lÄ‚Â½ TieuChiChamDiem (test_cases)
+        // Parse TieuChiChamDiem into readable checklist messages.
         $tieu_chi_raw = $decode($row['TieuChiBin']);
         $tieu_chi_json = json_decode($tieu_chi_raw, true);
         $test_cases = [];
-        if (is_array($tieu_chi_json) && isset($tieu_chi_json['tieu_chi'])) {
-            foreach ($tieu_chi_json['tieu_chi'] as $tc) {
-                // Formatting to look like a test case requirement
-                $test_cases[] = ['message' => escapeshellcmd(strip_tags($tc))];
+
+        $criteria_items = [];
+        if (is_array($tieu_chi_json)) {
+            if (isset($tieu_chi_json['tieu_chi']) && is_array($tieu_chi_json['tieu_chi'])) {
+                $criteria_items = $tieu_chi_json['tieu_chi'];
+            } else {
+                $criteria_items = $tieu_chi_json;
             }
-        } elseif (!empty($tieu_chi_raw)) {
-             $test_cases[] = ['message' => strip_tags($tieu_chi_raw)];
-        } // fallback if not JSON
+        }
+
+        foreach ($criteria_items as $tc) {
+            if (is_array($tc)) {
+                $message = $tc['name'] ?? $tc['message'] ?? $tc['description'] ?? $tc['title'] ?? '';
+                if (isset($tc['points']) && $message !== '') {
+                    $message .= ' (' . $tc['points'] . ' điểm)';
+                }
+            } else {
+                $message = (string)$tc;
+            }
+
+            $message = trim(strip_tags($message));
+            if ($message !== '') {
+                $test_cases[] = ['message' => $message];
+            }
+        }
+
+        if (empty($test_cases) && !empty($tieu_chi_raw)) {
+            $test_cases[] = ['message' => trim(strip_tags($tieu_chi_raw))];
+        }
 
         $response = [
             'success' => true,
@@ -334,6 +355,5 @@ function current_user_id() {
     }
     return null;
 }
-
 
 

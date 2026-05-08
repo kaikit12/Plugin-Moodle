@@ -155,6 +155,145 @@
     background: #5568d3;
     transform: translateX(5px);
 }
+.exercise-detail-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(17, 24, 39, 0.55);
+}
+.exercise-detail-modal.is-visible {
+    display: flex;
+}
+.exercise-detail-dialog {
+    width: min(720px, 100%);
+    max-height: 86vh;
+    overflow: auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.24);
+    border: 1px solid #e5e7eb;
+}
+.exercise-detail-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 14px 18px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.exercise-detail-head h3 {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.35;
+    color: #111827;
+    font-weight: 700;
+}
+.exercise-detail-close {
+    border: 0;
+    background: transparent;
+    color: #6b7280;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+.exercise-detail-body {
+    padding: 18px;
+}
+.detail-section {
+    margin-bottom: 18px;
+}
+.detail-section h4 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    color: #111827;
+    font-weight: 700;
+}
+.detail-section p {
+    margin: 0;
+    color: #374151;
+    line-height: 1.6;
+}
+.detail-criteria {
+    margin: 0;
+    padding-left: 0;
+    color: #374151;
+    list-style: none;
+}
+.detail-criteria li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+    margin: 0;
+}
+.detail-check {
+    color: #16a34a;
+    font-weight: 700;
+}
+.detail-meta-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+.detail-difficulty {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 9px;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+}
+.detail-difficulty.easy {
+    background: #10b981;
+}
+.detail-difficulty.medium {
+    background: #f59e0b;
+}
+.detail-difficulty.hard {
+    background: #0f8fa3;
+}
+.detail-time {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 9px;
+    border-radius: 6px;
+    background: #d1d5db;
+    color: #111827;
+    font-weight: 700;
+    font-size: 13px;
+}
+.exercise-detail-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 22px 20px;
+    border-top: 1px solid #e5e7eb;
+}
+.detail-secondary {
+    border: 0;
+    background: #d1d5db;
+    color: #374151;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.detail-primary {
+    background: #0f76c9;
+    color: white !important;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+}
 </style>
 
 <div class="exercise-suggestions-wrapper">
@@ -166,7 +305,7 @@
                 <span class="stat-label">Bài mới</span>
             </div>
             <div class="stat-card">
-                <span class="stat-number">0%</span>
+                <span class="stat-number">{{metadata.completion_percent}}%</span>
                 <span class="stat-label">Hoàn thành</span>
             </div>
         </div>
@@ -179,7 +318,12 @@
         <div class="exercise-card difficulty-{{difficulty}}">
             <div class="exercise-header">
                 <h3 class="exercise-title">{{title}}</h3>
+                {{#is_completed}}
+                <span class="badge-new">XONG</span>
+                {{/is_completed}}
+                {{^is_completed}}
                 <span class="badge-new">MỚI</span>
+                {{/is_completed}}
             </div>
             
             <div class="exercise-meta-row">
@@ -201,9 +345,13 @@
             </div>
             {{/reason}}
 
-            <a href="{{view_url}}" class="view-exercise-btn">
-                Xem chi tiết 
-            </a>
+            <button type="button"
+                    class="view-exercise-btn js-open-exercise-detail"
+                    data-exerciseid="{{id}}"
+                    data-courseid="{{course_id}}"
+                    data-viewurl="{{view_url}}">
+                Xem chi tiet
+            </button>
         </div>
         {{/suggestions}}
     </div>
@@ -212,3 +360,131 @@
     <p style="text-align:center;padding:40px;color:#999;">Không có bài tập đề xuất.</p>
     {{/suggestions}}
 </div>
+
+<div class="exercise-detail-modal" id="exercise-detail-modal" aria-modal="true" role="dialog">
+    <div class="exercise-detail-dialog">
+        <div class="exercise-detail-head">
+            <h3 id="detail-title">Chi ti&#7871;t b&#224;i t&#7853;p</h3>
+            <button type="button" class="exercise-detail-close js-close-exercise-detail" aria-label="Close">&times;</button>
+        </div>
+        <div class="exercise-detail-body" id="detail-body">
+            <p>&#272;ang t&#7843;i chi ti&#7871;t...</p>
+        </div>
+        <div class="exercise-detail-actions">
+            <button type="button" class="detail-secondary js-close-exercise-detail">Tho&#225;t</button>
+            <a href="#" class="detail-primary" id="detail-start-link">L&#224;m ngay &#10140;</a>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const modal = document.getElementById('exercise-detail-modal');
+    const titleEl = document.getElementById('detail-title');
+    const bodyEl = document.getElementById('detail-body');
+    const startLink = document.getElementById('detail-start-link');
+    const ajaxUrl = '{{{ajax_url}}}';
+    const sesskey = '{{sesskey}}';
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function setLoading(viewUrl) {
+        titleEl.innerHTML = 'Chi ti&#7871;t b&#224;i t&#7853;p';
+        bodyEl.innerHTML = '<p>&#272;ang t&#7843;i chi ti&#7871;t...</p>';
+        startLink.href = viewUrl;
+        modal.classList.add('is-visible');
+    }
+
+    function renderDetail(exercise, viewUrl) {
+        titleEl.textContent = 'Chi tiết bài tập: ' + (exercise.title || '');
+        startLink.href = viewUrl;
+
+        const criteria = Array.isArray(exercise.test_cases) ? exercise.test_cases : [];
+        const criteriaHtml = criteria.length
+            ? '<ul class="detail-criteria">' + criteria.map(function(item) {
+                return '<li><span class="detail-check">✓</span><span>' + escapeHtml(item.message || item.input || '') + '</span></li>';
+            }).join('') + '</ul>'
+            : '<p>Chưa có tiêu chí chi tiết.</p>';
+
+        const difficultyRaw = String(exercise.difficulty || '').toLowerCase();
+        let difficultyClass = 'medium';
+        let difficultyLabel = exercise.difficulty || 'Chưa phân loại';
+        if (difficultyRaw.indexOf('easy') !== -1 || difficultyRaw.indexOf('dễ') !== -1) {
+            difficultyClass = 'easy';
+            difficultyLabel = 'Dễ';
+        } else if (difficultyRaw.indexOf('hard') !== -1 || difficultyRaw.indexOf('khó') !== -1) {
+            difficultyClass = 'hard';
+            difficultyLabel = 'Khó';
+        } else if (difficultyRaw.indexOf('medium') !== -1 || difficultyRaw.indexOf('trung') !== -1) {
+            difficultyClass = 'medium';
+            difficultyLabel = 'Trung bình';
+        }
+
+        bodyEl.innerHTML =
+            '<div class="detail-section"><h4>Mô tả:</h4><p>' + escapeHtml(exercise.description || '') + '</p></div>' +
+            '<div class="detail-section"><h4>Yêu cầu / Tiêu chí chấm điểm:</h4><p>' + escapeHtml(exercise.instructions || '') + '</p></div>' +
+            '<div class="detail-section">' + criteriaHtml + '</div>' +
+            '<div class="detail-meta-row"><span class="detail-difficulty ' + difficultyClass + '">Mức độ: ' +
+            escapeHtml(difficultyLabel) + '</span><span class="detail-time">⏱ ' +
+            escapeHtml(exercise.estimated_time || 30) + ' phút</span></div>';
+    }
+
+    function closeModal() {
+        modal.classList.remove('is-visible');
+    }
+
+    document.querySelectorAll('.js-open-exercise-detail').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const exerciseId = button.dataset.exerciseid;
+            const courseId = button.dataset.courseid;
+            const viewUrl = button.dataset.viewurl;
+            setLoading(viewUrl);
+
+            const formData = new FormData();
+            formData.append('action', 'get_exercise_details');
+            formData.append('exerciseid', exerciseId);
+            formData.append('courseid', courseId);
+            formData.append('sesskey', sesskey);
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(payload) {
+                if (!payload || payload.status !== 'success') {
+                    throw new Error(payload && payload.message ? payload.message : 'Load failed');
+                }
+                renderDetail(payload.data, viewUrl);
+            })
+            .catch(function() {
+                bodyEl.innerHTML = '<p>Không tải được chi tiết. Bấm Làm ngay để mở trang bài tập.</p>';
+            });
+        });
+    });
+
+    document.querySelectorAll('.js-close-exercise-detail').forEach(function(button) {
+        button.addEventListener('click', closeModal);
+    });
+
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+})();
+</script>

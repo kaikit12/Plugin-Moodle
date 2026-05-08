@@ -120,7 +120,7 @@
 
 <div class="result-wrapper">
     <div class="result-header">
-        <h2>🎯 Submission Results</h2>
+        <h2>Submission Results</h2>
     </div>
 
     {{#is_graded}}
@@ -148,31 +148,53 @@
 
     {{#result.fusion_score}}
     <div class="feedback-card" style="background: #ecfdf5; border-color: #34d399;">
-        <h4 style="margin-top:0; color: #047857;">🤖 Điểm số từ DSA Fusion (Local AI)</h4>
+        <h4 style="margin-top:0; color: #047857;">DSA Fusion Score</h4>
         <p style="margin:0; font-size: 18px; font-weight: bold; color: #065f46;">Score: {{result.fusion_score}} / {{result.max_score}}</p>
     </div>
     {{/result.fusion_score}}
 
     {{#result.cloud_analysis}}
     <div class="cloud-card">
-        <h4 style="margin-top:0; color: #3730a3;">☁️ Phân tích từ Cloud (PythonFixer)</h4>
+        <h4 style="margin-top:0; color: #3730a3;">Cloud Analysis</h4>
         <p style="margin:0; color: #312e81;">{{result.cloud_analysis}}</p>
     </div>
     {{/result.cloud_analysis}}
 
+    {{#result.improvement}}
+    <div class="feedback-card">
+        <h4 style="margin-top:0;">Improvement Suggestions</h4>
+        <p style="margin:0; white-space:pre-line;">{{result.improvement}}</p>
+    </div>
+    {{/result.improvement}}
+
+    {{#result.criteria_scores.0}}
+    <div class="test-results">
+        <h4>Criteria Details</h4>
+        {{#result.criteria_scores}}
+        <div class="test-item {{#earned}}test-pass{{/earned}}{{^earned}}test-fail{{/earned}}">
+            <div>
+                <strong>{{name}}: {{earned}} / {{max}}</strong><br>
+                <small>{{feedback}}</small>
+                {{#evidence}}<br><small><strong>Evidence:</strong> {{evidence}}</small>{{/evidence}}
+            </div>
+        </div>
+        {{/result.criteria_scores}}
+    </div>
+    {{/result.criteria_scores.0}}
+
     {{#result.feedback.overall}}
     <div class="feedback-card">
-        <h4 style="margin-top:0;">💬 {{#str}}overallfeedback, local_exercise_suggestion{{/str}}</h4>
+        <h4 style="margin-top:0;">{{#str}}overallfeedback, local_exercise_suggestion{{/str}}</h4>
         <p style="margin:0;">{{result.feedback.overall}}</p>
     </div>
     {{/result.feedback.overall}}
 
     {{#result.test_results.0}}
     <div class="test-results">
-        <h4>✓ {{#str}}testresults, local_exercise_suggestion{{/str}}</h4>
+        <h4>{{#str}}testresults, local_exercise_suggestion{{/str}}</h4>
         {{#result.test_results}}
         <div class="test-item {{#passed}}test-pass{{/passed}}{{^passed}}test-fail{{/passed}}">
-            <span class="test-icon">{{#passed}}✅{{/passed}}{{^passed}}❌{{/passed}}</span>
+            <span class="test-icon">{{#passed}}PASS{{/passed}}{{^passed}}FAIL{{/passed}}</span>
             <div>
                 <strong>{{test}}</strong><br>
                 <small>{{message}}</small>
@@ -185,7 +207,7 @@
 
     {{#is_pending}}
     <div style="background:#dbeafe; border:1px solid #3b82f6; border-radius:10px; padding:30px; text-align:center;">
-        <div style="font-size:40px; margin-bottom:15px;">⏳</div>
+        <div style="font-size:24px; margin-bottom:15px;">Pending</div>
         <h3>Your submission is being graded...</h3>
         <p style="color:#6b7280;">Status: {{result.status}}</p>
     </div>
@@ -193,10 +215,10 @@
 
     <div class="actions">
         <a href="{{{list_url}}}" class="btn-primary">
-            ← {{#str}}backtosuggestionlist, local_exercise_suggestion{{/str}}
+            {{#str}}backtosuggestionlist, local_exercise_suggestion{{/str}}
         </a>
         <a href="{{{exercise_url}}}" class="btn-secondary">
-            🔄 {{#str}}retryexercise, local_exercise_suggestion{{/str}}
+            {{#str}}retryexercise, local_exercise_suggestion{{/str}}
         </a>
     </div>
 </div>

@@ -1,228 +1,163 @@
-# Exercise Suggestion Integration Plugin for Moodle
+# Moodle Local Plugin: Exercise Suggestion
 
-Plugin Moodle tích hợp với hệ thống API bên thứ 3 để cung cấp gợi ý bài tập thông minh dựa trên phân tích học tập của sinh viên.
+Plugin `local_exercise_suggestion` them chuc nang goi y bai tap va cham diem bai nop cho Moodle. Phien ban hien tai duoc toi uu cho demo: danh sach bai goi y lay tu API rieng, bai nop duoc cham qua grading API tren Render, va giao dien co popup chi tiet / popup dang cham de trai nghiem muot hon.
 
-## Tính năng chính
+## Tinh nang hien tai
 
-- **Tích hợp API**: Kết nối với hệ thống gợi ý bài tập bên ngoài
-- **Gợi ý thông minh**: Đưa ra bài tập phù hợp dựa trên tiến độ học tập
-- **Phân tích học tập**: Thu thập và hiển thị analytics từ API
-- **Hệ thống feedback**: Cho phép sinh viên đánh giá bài tập
-- **Cache tối ưu**: Lưu trữ tạm thời để cải thiện hiệu năng
-- **Logging**: Ghi nhận hoạt động để phân tích và debug
+- Goi y bai tap theo sinh vien va khoa hoc.
+- Map diem nang luc sang muc do bai tap hien co: `easy`, `medium`, `hard`.
+- Neu khong co bai dung cap do, API ha ve cap gan nhat thap hon thay vi goi y lung tung.
+- Trang danh sach co popup chi tiet bai tap, hien mo ta, yeu cau, tieu chi cham diem, muc do va thoi gian.
+- Nut `Lam ngay` trong popup moi chuyen sang trang lam bai.
+- Trang lam bai co code editor, test cases/tieu chi, autosave local.
+- Khi bam nop bai, hien popup “dang cham diem” va khoa nut submit de tranh spam click.
+- Bai nop duoc gui den grading API:
+  `https://backend-ovru.onrender.com/submissions/`
+- Trang ket qua hien diem, feedback AI, improvement suggestions, criteria details va test results.
+- Trang danh sach hien ty le hoan thanh theo user/course dua tren cac bai da submit.
 
-## Cấu trúc thư mục
+## Cau truc quan trong
 
-```
+```text
 local_exercise_suggestion/
+├── ajax.php
+├── index.php
+├── settings.php
+├── start_api.ps1
 ├── classes/
 │   ├── api/
-│   │   ├── client.php              # API client class
-│   │   └── response_handler.php    # Xử lý response từ API
+│   │   ├── client.php
+│   │   └── response_handler.php
 │   └── services/
-│       └── exercise_service.php    # Business logic layer
-├── db/
-│   ├── access.php                  # Định nghĩa capabilities
-│   ├── install.xml                 # Database schema
-│   └── upgrade.php                 # Database upgrade script
-├── lang/
-│   └── en/
-│       └── local_exercise_suggestion.php  # Language strings
-├── tests/
-│   ├── api_test.php               # Unit tests cho API classes
-│   └── services_test.php          # Unit tests cho services
-├── lib.php                        # Library functions
-├── settings.php                   # Admin settings
-├── version.php                    # Plugin version info
-└── README.md                      # Tài liệu này
+│       └── exercise_service.php
+├── exercise_suggestion_api/
+│   └── api_server.php
+├── templates/
+│   ├── suggestions_list.mustache
+│   ├── exercise_view.mustache
+│   └── result_view.mustache
+└── lang/
+    └── en/local_exercise_suggestion.php
 ```
 
-## Yêu cầu hệ thống
+## API dang dung
 
-- Moodle 3.10 trở lên
-- PHP 7.4 trở lên
-- cURL extension được bật
-- Kết nối internet để gọi API bên ngoài
+### 1. Suggestion API local
 
-## Cài đặt
+Dung de lay danh sach bai tap va chi tiet bai tap tu database `Data_PersonalizedSystem`.
 
-### Bước 1: Copy plugin vào Moodle
+Chay server:
 
-```bash
-# Đi đến thư mục Moodle
-cd /path/to/your/moodle
-
-# Copy plugin vào thư mục local
-cp -r local_exercise_suggestion local/exercise_suggestion/
+```powershell
+cd D:\Code\Moodle\local_exercise_suggestion
+.\start_api.ps1
 ```
 
-### Bước 2: Cài đặt qua Moodle Admin
+Mac dinh server chay tai:
 
-1. Đăng nhập vào Moodle với quyền Site Administrator
-2. Truy cập **Site administration** → **Notifications**  
-3. Moodle sẽ phát hiện plugin mới và yêu cầu cài đặt
-4. Nhấn **"Upgrade Moodle database now"**
-
-### Bước 3: Cấu hình plugin
-
-1. Truy cập **Site administration** → **Plugins** → **Local plugins** → **Exercise Suggestion Integration**
-2. Cấu hình các thông số:
-   - **API Base URL**: URL của API bên thứ 3
-   - **API Key**: Key xác thực
-   - **API Timeout**: Thời gian timeout (mặc định 30s)
-   - **Enable Analytics**: Bật/tắt tính năng analytics
-   - **Enable Feedback**: Bật/tắt thu thập feedback
-   - **Cache Duration**: Thời gian lưu cache (mặc định 1 giờ)
-
-## Sử dụng
-
-### Cho Admin
-
-1. **Cấu hình API**: Vào Settings để nhập thông tin API
-2. **Test kết nối**: Sử dụng tính năng test để kiểm tra API
-3. **Quản lý quyền**: Phân quyền xem suggestions cho các vai trò
-4. **Theo dõi logs**: Xem báo cáo hoạt động trong database
-
-### Cho Giáo viên
-
-1. **Xem suggestions của sinh viên**: Truy cập khóa học → Exercise Suggestions
-2. **Phân tích tiến độ**: Xem analytics của cả lớp
-3. **Quản lý feedback**: Theo dõi đánh giá của sinh viên
-
-### Cho Sinh viên
-
-1. **Nhận gợi ý bài tập**: Xem danh sách bài tập được gợi ý
-2. **Lọc theo tiêu chí**: Sử dụng filter theo độ khó, chủ đề
-3. **Đánh giá bài tập**: Cung cấp feedback về bài tập
-4. **Theo dõi tiến độ**: Xem analytics cá nhân
-
-## API Documentation
-
-### Client Class (`\local_exercise_suggestion\api\client`)
-
-```php
-// Khởi tạo client
-$client = new client($apiUrl, $apiKey, $timeout);
-
-// Lấy gợi ý bài tập
-$suggestions = $client->get_exercise_suggestions($userId, $courseId, $filters);
-
-// Gửi feedback
-$result = $client->submit_exercise_feedback($exerciseId, $userId, $feedback);
-
-// Test kết nối
-$status = $client->test_connection();
+```text
+http://localhost:8080
 ```
 
-### Service Class (`\local_exercise_suggestion\services\exercise_service`)
+Endpoints chinh:
 
-```php
-// Khởi tạo service
-$service = new exercise_service();
+- `POST /api/suggestions`
+- `GET /api/exercise/{id}`
 
-// Lấy gợi ý cho sinh viên
-$result = $service->get_suggestions_for_user($userId, $courseId, $filters);
+### 2. Grading API Render
 
-// Gửi feedback
-$result = $service->submit_feedback($exerciseId, $userId, $feedbackData);
+Dung de cham bai nop va tra ve score/feedback:
 
-// Lấy analytics
-$analytics = $service->get_user_analytics($userId, $courseId);
+```text
+https://backend-ovru.onrender.com/submissions/
 ```
 
-## Database Tables
+Plugin gui code len endpoint nay trong `classes/api/client.php`.
 
-Plugin tạo 5 bảng trong database (đã rút gọn tên để phù hợp giới hạn 28 ký tự của Moodle):
+## Cai dat trong Moodle local
 
-1. **local_exsug_logs**: Log các request và response
-2. **local_exsug_feedback**: Lưu feedback từ sinh viên  
-3. **local_exsug_cache**: Cache suggestions để tăng hiệu năng
-4. **local_exsug_progress**: Theo dõi tiến độ học tập
-5. **local_exsug_analytics**: Cache dữ liệu analytics
+Vi du voi XAMPP:
 
-## Troubleshooting
-
-### Lỗi kết nối API
-
-```bash
-# Kiểm tra kết nối
-curl -H "Authorization: Bearer YOUR_API_KEY" https://your-api-url/health
-
-# Kiểm tra cURL trong PHP
-php -m | grep curl
+```text
+C:\xampp\htdocs\moodle\local\exercise_suggestion
 ```
 
-### Lỗi cấu hình
+Neu dang code o o D, co the copy plugin vao Moodle hoac cau hinh de Moodle load plugin tu dung duong dan dang phat trien. Trong code hien tai `index.php` va `ajax.php` co fallback load config:
 
-1. Kiểm tra API URL và key trong Settings
-2. Đảm bảo server có thể truy cập internet
-3. Kiểm tra firewall không block outbound connections
-
-### Lỗi permissions
-
-1. Kiểm tra capabilities trong **Users** → **Permissions** → **Define roles**
-2. Đảm bảo sinh viên được enroll vào khóa học
-3. Kiểm tra context level của capabilities
-
-### Debug mode
-
-Bật debug mode trong plugin settings để xem chi tiết:
-
-```php
-// Trong config.php
-$CFG->debug = E_ALL;
-$CFG->debugdisplay = 1;
+```text
+C:\xampp\htdocs\moodle\config.php
 ```
 
-## Testing
+Sau khi sua template/PHP, neu Moodle van hien giao dien cu, purge cache:
 
-Chạy unit tests:
-
-```bash
-# Từ thư mục Moodle root
-php admin/tool/phpunit/cli/init.php
-vendor/bin/phpunit local/exercise_suggestion/tests/
+```powershell
+cd C:\xampp\htdocs\moodle
+C:\xampp\php\php.exe admin\cli\purge_caches.php
 ```
 
-## Bảo mật
+## Cach demo nhanh
 
-- API keys được mã hóa trong database
-- Validate tất cả input từ API
-- Sử dụng prepared statements cho database queries
-- Kiểm tra permissions trước khi truy cập dữ liệu
+1. Start Apache/MySQL trong XAMPP.
+2. Start suggestion API:
 
-## Performance
+```powershell
+cd D:\Code\Moodle\local_exercise_suggestion
+.\start_api.ps1
+```
 
-- Sử dụng cache để giảm API calls
-- Background tasks cho sync dữ liệu
-- Database indexes cho query nhanh
-- Configurable timeouts
+3. Mo Moodle:
 
-## Changelog
+```text
+http://localhost/moodle/local/exercise_suggestion/index.php?courseid=2&action=list
+```
 
-### Version 1.0.0 (2024-10-22)
-- Initial release
-- API integration với external exercise system
-- Basic suggestions và feedback functionality
-- Analytics integration
-- Caching và performance optimization
+4. Bam `Xem chi tiet` tren mot bai tap.
+5. Popup chi tiet hien ra, bam `Lam ngay`.
+6. Viet/nop code.
+7. Popup dang cham diem hien ra.
+8. Khi grading API tra ket qua, Moodle chuyen sang trang diem va feedback.
 
-## Support
+## Luong xu ly
 
-Để được hỗ trợ, vui lòng:
+```text
+Student
+  -> Moodle list page
+  -> Suggestion API local
+  -> Popup chi tiet bai tap
+  -> Trang lam bai
+  -> Render grading API
+  -> Trang ket qua / feedback
+```
 
-1. Kiểm tra tài liệu này trước
-2. Xem logs trong Moodle admin
-3. Liên hệ team phát triển với thông tin chi tiết về lỗi
+## Ghi chu ve completion
 
-## Contributing
+Bang progress cu trong plugin chua dung vi schema hien tai khong khop voi external exercise id. De tranh rui ro truoc demo, ty le hoan thanh dang duoc luu bang Moodle user preferences theo `user + course`.
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Khi submit thanh cong:
 
-## License
+- ma bai tap duoc luu vao preference cua user
+- trang list tinh lai so bai da hoan thanh tren danh sach bai dang hien
+- card da lam hien badge `XONG`
 
-Plugin này được phát hành dưới GNU General Public License v3.0.
+## Ghi chu ve DSA_Fusion_Backend
+
+Thu muc `DSA_Fusion_Backend` khong con can cho flow hien tai vi plugin da chuyen sang grading API tren Render. Co the xoa khoi GitHub/repo neu khong dung nua.
+
+## Cac file nen commit cho phien ban hien tai
+
+```powershell
+git add ajax.php classes/api/client.php classes/api/response_handler.php classes/services/exercise_service.php exercise_suggestion_api/api_server.php index.php templates/exercise_view.mustache templates/result_view.mustache templates/suggestions_list.mustache README.md start_api.ps1
+```
+
+Neu muon xoa backend/report cu:
+
+```powershell
+git rm -r -f --ignore-unmatch DSA_Fusion_Backend REVIEW_REPORT.md PROJECT_CONTEXT_FOR_AI.md "tổng quan plugin moodle"
+```
+
+## Luu y
+
+- Khong dung `git add .` neu trong repo con file local khong lien quan.
+- Neu giao dien Moodle khong doi sau khi sua template, purge cache.
+- Neu suggestion API khong cap nhat, tat cua so server `start_api.ps1` va chay lai.
+- Render API co the mat vai giay de wake up lan dau.

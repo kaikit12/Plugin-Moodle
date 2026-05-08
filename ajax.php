@@ -69,6 +69,20 @@ try {
             'status' => 'success',
             'data' => $data
         ];
+    } elseif ($action === 'submit') {
+        $exerciseid = required_param('exerciseid', PARAM_TEXT);
+        $courseid = required_param('courseid', PARAM_INT);
+        // Nhận code từ frontend gửi lên
+        $code_content = required_param('solution', PARAM_RAW); 
+        $timespent = optional_param('timespent', 0, PARAM_INT);
+        $answers = ['solution' => $code_content];
+        
+        $data = $service->submit_exercise($username, $exerciseid, $courseid, $answers, $timespent);
+        
+        $response = [
+            'status' => 'success',
+            'data' => $data
+        ];
     } else {
         $courseid = required_param('courseid', PARAM_INT);
         $data = $service->get_suggestions($username, $courseid, $filters);

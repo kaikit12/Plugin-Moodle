@@ -325,7 +325,7 @@ class client {
      * Endpoint: POST http://127.0.0.1:8000/submissions/
      */
     public function submit_code_to_dsa_fusion($userid, $exerciseid, $code_content) {
-        $url = "http://127.0.0.1:8000/submissions/";
+        $url = get_config('local_exercise_suggestion', 'fusion_url') ?: "http://127.0.0.1:8000/submissions/";
         
         $temp_dir = make_temp_directory("exsug_submissions");
         $file_name = "submission_{$userid}_{$exerciseid}.py";
@@ -335,9 +335,12 @@ class client {
         
         $cfile = new \CURLFile($file_path, "text/x-python", $file_name);
         
+        $idempotency_key = md5((string)$userid . $exerciseid . time());
+        
         $post_data = [
             "student_id" => (string)$userid,
             "student_name" => "SV_" . $userid,
+            "idempotency_key" => $idempotency_key,
             "files" => $cfile
         ];
         
